@@ -1,0 +1,32 @@
+[project]
+name = "starsi"
+version = "0.0.1"
+description = "StarSI monorepo — private local-first LLM served from owned hardware to iPhone"
+requires-python = ">=3.12"
+readme = "README.md"
+
+# Workspace root. Each app and package is its own uv project; this file
+# only wires them together so `uv sync` at the root installs everything
+# in one environment on a given machine.
+[tool.uv.workspace]
+members = [
+    "packages/starsi-core",
+    "packages/starsi-inference",
+    "apps/hub",
+    "apps/edge",
+    "apps/trainer",
+]
+
+[tool.uv.sources]
+starsi-core = { workspace = true }
+starsi-inference = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages", "apps"]

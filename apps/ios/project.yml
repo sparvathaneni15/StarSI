@@ -1,0 +1,28 @@
+# XcodeGen spec. `xcodegen generate` → StarSI.xcodeproj (git-ignored).
+name: StarSI
+options:
+  bundleIdPrefix: com.samanyu.starsi
+  deploymentTarget:
+    iOS: "18.0"
+packages:
+  StarSIPackage:
+    path: .
+targets:
+  StarSIApp:
+    type: application
+    platform: iOS
+    sources: [Sources/StarSIApp]
+    dependencies:
+      - package: StarSIPackage
+        product: StarSIClient
+      - package: StarSIPackage
+        product: StarSIMCP
+    info:
+      path: Sources/StarSIApp/Info.plist
+      properties:
+        NSBonjourServices: [_starsi._tcp]
+        NSLocalNetworkUsageDescription: "StarSI finds your Mac on the local network to chat with your private model."
+        UIBackgroundModes: [fetch]
+    settings:
+      base:
+        SWIFT_STRICT_CONCURRENCY: complete

@@ -1,0 +1,31 @@
+# Mac Studio · M5 Ultra · 256 GB · arrives Jan 2027
+bind: 0.0.0.0
+node:
+  name: studio
+  kind: hub
+  host: studio.local
+  port: 8080
+  memory_gb: 256
+  models:
+    - name: glm-5.3-flash
+      repo: mlx-community/GLM-5.3-Flash-4bit   # verify exact repo before first run
+      engine: mlx
+      quant: 4bit
+      memory_gb: 100
+      supports_reasoning_effort: true
+      tags: [primary, teacher]
+    - name: qwen3.8-27b
+      repo: mlx-community/Qwen3.8-27B-8bit
+      engine: mlx
+      quant: 8bit
+      memory_gb: 30
+      supports_reasoning_effort: true
+      adapter: null            # set once the LoRA run lands
+      tags: [ideation]
+    - name: qwen3.8-27b-base
+      repo: mlx-community/Qwen3.8-27B-Base-4bit
+      engine: mlx
+      quant: 4bit
+      memory_gb: 18
+      is_base: true
+      tags: [fanout]

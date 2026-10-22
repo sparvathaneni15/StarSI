@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+uv.lock
+
+# Models, weights, data — never committed
+models/
+checkpoints/
+adapters/
+data/raw/
+data/generated/
+data/pairs/
+*.safetensors
+*.gguf
+*.npz
+*.bin
+
+# Runtime
+logs/
+*.log
+.env
+.env.*
+
+# Swift / Xcode
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+Package.resolved
+
+# macOS
+.DS_Store

@@ -1,0 +1,25 @@
+# MacBook Pro · M4 Max · 36 GB (raise iogpu.wired_limit_mb to ~32 GB first)
+bind: 0.0.0.0
+node:
+  name: macbook
+  kind: edge
+  host: macbook.local
+  port: 8080
+  memory_gb: 36
+  models:
+    - name: qwen3.8-27b
+      repo: mlx-community/Qwen3.8-27B-4bit
+      engine: mlx
+      quant: 4bit
+      memory_gb: 18
+      supports_reasoning_effort: true
+      adapter: null
+      tags: [primary, ideation]
+    - name: qwen3.8-27b-base
+      repo: mlx-community/Qwen3.8-27B-Base-4bit
+      engine: mlx
+      quant: 4bit
+      memory_gb: 18
+      is_base: true
+      tags: [fanout]
+    # Gemma 4 31B (~20 GB) also fits alongside one Qwen; add when wanted.

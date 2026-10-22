@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starsi.local/protocol/v0",
+  "title": "StarSI protocol v0",
+  "$defs": {
+    "Role": { "enum": ["system", "user", "assistant", "tool"] },
+    "ChatMessage": {
+      "type": "object",
+      "required": ["role", "content"],
+      "properties": {
+        "role": { "$ref": "#/$defs/Role" },
+        "content": { "type": "string" },
+        "tool_call_id": { "type": ["string", "null"] }
+      }
+    },
+    "SamplingConfig": {
+      "type": "object",
+      "properties": {
+        "temperature": { "type": "number", "default": 1.0 },
+        "min_p": { "type": "number", "default": 0.05 },
+        "top_p": { "type": ["number", "null"] },
+        "max_tokens": { "type": "integer", "default": 2048 },
+        "reasoning_effort": { "enum": ["low", "medium", "high"], "default": "medium" }
+      }
+    },
+    "IdeationConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "candidates": { "type": "integer", "minimum": 2, "maximum": 32, "default": 8 },
+        "survivors": { "type": "integer", "minimum": 1, "maximum": 8, "default": 2 },
+        "novelty_weight": { "type": "number", "default": 0.5 },
+        "plausibility_weight": { "type": "number", "default": 0.5 }
+      }
+    },
+    "ChatRequest": {
+      "type": "object",
+      "required": ["messages"],
+      "properties": {
+        "messages": { "type": "array", "items": { "$ref": "#/$defs/ChatMessage" } },
+        "model": { "type": ["string", "null"] },
+        "sampling": { "$ref": "#/$defs/SamplingConfig" },
+        "ideation": { "$ref": "#/$defs/IdeationConfig" },
+        "tools": { "type": "array", "items": { "type": "string" } },
+        "stream": { "type": "boolean", "default": true }
+      }
+    },
+    "StreamEvent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["token", "thinking", "tool_call", "candidate", "done", "error"] },
+        "content": { "type": "string" },
+        "tool_name": { "type": ["string", "null"] },
+        "tool_args": { "type": ["object", "null"] },
+        "tool_call_id": { "type": ["string", "null"] },
+        "candidate_index": { "type": ["integer", "null"] },
+        "novelty": { "type": ["number", "null"] },
+        "plausibility": { "type": ["number", "null"] },
+        "served_by": { "type": ["string", "null"] },
+        "model": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
