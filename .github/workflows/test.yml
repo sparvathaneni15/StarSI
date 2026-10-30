@@ -26,8 +26,8 @@ jobs:
         run: |
           set -e
           for chart in blocks/*/chart; do
-            helm lint "$chart" --set authToken=ci
-            helm template ci "$chart" --set authToken=ci > /dev/null
+            helm lint "$chart" --set authToken=ci --set gpuInstanceId=i-ci
+            helm template ci "$chart" --set authToken=ci --set gpuInstanceId=i-ci > /dev/null
           done
 
   ios:
