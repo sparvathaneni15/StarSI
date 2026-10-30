@@ -1,0 +1,59 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # one entry per block that ships its own image
+        block: [gateway, memory, registry, model-pipeline, capacity-controller, tts]
+    steps:
+      - uses: actions/checkout@v4
+      - name: skip blocks without a Dockerfile yet
+        id: present
+        run: |
+          if [ -f "blocks/${{ matrix.block }}/Dockerfile" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: docker/setup-qemu-action@v3
+        if: steps.present.outputs.found == 'true'
+      - uses: docker/setup-buildx-action@v3
+        if: steps.present.outputs.found == 'true'
+      - uses: docker/login-action@v3
+        if: steps.present.outputs.found == 'true'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        if: steps.present.outputs.found == 'true'
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/starsi-${{ matrix.block }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=ref,event=tag
+      - uses: docker/build-push-action@v6
+        if: steps.present.outputs.found == 'true'
+        with:
+          context: blocks/${{ matrix.block }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.block }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.block }}

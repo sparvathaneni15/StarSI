@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels: {app: {{ .Release.Name }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app: {{ .Release.Name }}}
+    spec:
+      containers:
+        - name: registry
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: STARSI_REGISTRY_PATH
+              value: /var/lib/starsi/registry/state.json
+            - name: STARSI_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef: {name: {{ .Release.Name }}-auth, key: token}
+          volumeMounts:
+            - name: state
+              mountPath: /var/lib/starsi/registry
+          readinessProbe:
+            httpGet: {path: /health, port: 8080}
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-state

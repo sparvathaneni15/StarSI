@@ -1,0 +1,18 @@
+image:
+  repository: ghcr.io/speaches-ai/speaches
+  tag: latest-cpu
+  pullPolicy: IfNotPresent
+
+# Kokoro-82M: near-studio quality, fast on CPU. speaches pulls it on first use.
+ttsModel: speaches-ai/Kokoro-82M-v1.0-ONNX
+voice: af_heart
+
+service:
+  port: 8000        # ClusterIP — only the gateway talks to this
+
+cache:
+  size: 5Gi
+
+resources:
+  requests: {cpu: "1", memory: 1Gi}
+  limits: {memory: 3Gi}

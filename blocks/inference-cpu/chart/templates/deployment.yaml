@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels: {app: {{ .Release.Name }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}   # one model copy; no rolling overlap on a small node
+  selector:
+    matchLabels: {app: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app: {{ .Release.Name }}}
+    spec:
+      {{- if .Values.model.s3.enabled }}
+      initContainers:
+        - name: fetch-model
+          image: amazon/aws-cli:latest
+          env:
+            - name: MODEL_VERSION
+              value: {{ .Values.model.s3.version | quote }}
+          command: ["sh", "-c"]
+          args:
+            - >
+              aws s3 cp
+              s3://{{ .Values.model.s3.bucket }}/{{ .Values.model.s3.name }}/$(MODEL_VERSION)/model.gguf
+              /models/model.gguf
+          volumeMounts:
+            - {name: models, mountPath: /models, subPath: models}
+      {{- end }}
+      containers:
+        - name: llama
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            {{- if .Values.model.s3.enabled }}
+            - "-m"
+            - "/models/model.gguf"
+            {{- else }}
+            - "-hf"
+            - {{ .Values.model.hf | quote }}
+            {{- end }}
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8080"
+            - "--ctx-size"
+            - {{ .Values.contextSize | quote }}
+            - "--parallel"
+            - {{ .Values.parallel | quote }}
+            {{- if gt (int .Values.threads) 0 }}
+            - "--threads"
+            - {{ .Values.threads | quote }}
+            {{- end }}
+            - "--alias"
+            - {{ .Values.model.servedName | quote }}
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - {name: models, mountPath: /models, subPath: models}
+            - {name: models, mountPath: /root/.cache, subPath: hf-cache}
+          readinessProbe:
+            httpGet: {path: /health, port: 8080}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 40   # first boot may download the model
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-models

@@ -1,9 +1,0 @@
-# Seed topics for dialogue generation. Breadth matters more than depth
-# here; the model should be pushed across domains so cross-domain
-# recombination shows up in the data.
-topics:
-  - "unified memory architectures and where they break down"
-  - "what a 'good explanation' is, across physics and biology"
-  - "why most ideas in a field are the same idea"
-  - "designing a protocol that degrades gracefully without a router"
-  - "distillation as a legal and technical boundary"

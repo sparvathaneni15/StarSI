@@ -1,0 +1,21 @@
+# Canonical port map for the SSH fabric. Every forward in any unit, chart
+# value, or iOS default must agree with this file.
+
+[nodeports]                 # loopback-reachable NodePorts per site
+gateway = 30086             # aws (and pi, if a home gateway is ever added)
+memory = 30084              # pi
+registry = 30085            # pi
+capacity = 30087            # aws
+
+[pi-to-aws]                 # persistent autossh (pi-to-aws.service)
+local_gateway = 19090       # pi:19090  -> aws:30086
+local_capacity = 19091      # pi:19091  -> aws:30087
+remote_memory = 18484       # aws:18484 -> pi:30084
+remote_registry = 18485     # aws:18485 -> pi:30085
+
+[phone-to-aws]              # iOS SSHTunnelTransport local forwards
+chat = 8484                 # phone:8484 -> aws:30086 (gateway: chat + voice WS)
+memory = 8486               # phone:8486 -> aws:18484 (pi memory via reverse tunnel)
+
+[phone-to-pi]               # later home-direct optimization
+chat = 8484                 # phone:8484 -> pi:30086

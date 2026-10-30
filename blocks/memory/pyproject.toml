@@ -1,0 +1,19 @@
+[project]
+name = "starsi-memory"
+version = "0.1.0"
+description = "StarSI memory block — source-of-truth turn store, sync + read API"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["starsi_memory"]

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: starsi-inference-gpu
+description: On-demand GPU inference tier — vLLM OpenAI server, scale-to-zero by instance stop
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

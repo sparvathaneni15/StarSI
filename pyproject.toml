@@ -1,32 +1,29 @@
 [project]
 name = "starsi"
-version = "0.0.1"
-description = "StarSI monorepo — private local-first LLM served from owned hardware to iPhone"
-requires-python = ">=3.12"
+version = "0.1.0"
+description = "StarSI — personal multi-device AI assistant: iPhone client, Mac nodes"
+requires-python = ">=3.11"
 readme = "README.md"
 
-# Workspace root. Each app and package is its own uv project; this file
-# only wires them together so `uv sync` at the root installs everything
-# in one environment on a given machine.
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.8"]
+
 [tool.uv.workspace]
 members = [
-    "packages/starsi-core",
-    "packages/starsi-inference",
-    "apps/hub",
-    "apps/edge",
-    "apps/trainer",
+    "blocks/gateway",
+    "blocks/memory",
+    "blocks/registry",
+    "blocks/capacity-controller",
+    "blocks/model-pipeline",
+    "train",
 ]
-
-[tool.uv.sources]
-starsi-core = { workspace = true }
-starsi-inference = { workspace = true }
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
-testpaths = ["packages", "apps"]
+testpaths = ["blocks"]

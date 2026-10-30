@@ -1,0 +1,6 @@
+apiVersion: v2
+name: starsi-registry
+description: StarSI registry block — health rollup + live model versions
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

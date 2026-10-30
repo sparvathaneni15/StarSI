@@ -1,0 +1,18 @@
+image:
+  repository: ghcr.io/samanyuparvathaneni/starsi-registry
+  tag: latest
+  pullPolicy: IfNotPresent
+
+authToken: ""
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30085
+
+storage:
+  size: 1Gi
+
+resources:
+  requests: {cpu: 25m, memory: 64Mi}
+  limits: {memory: 256Mi}

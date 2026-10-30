@@ -40,3 +40,11 @@ Package.resolved
 
 # macOS
 .DS_Store
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# XcodeGen output
+apps/ios/StarSI.xcodeproj

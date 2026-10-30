@@ -1,0 +1,41 @@
+# Mac training-aux assembly — the containers that surround bare-metal MLX
+# training. Driven over SSH by the Pi's pipeline Jobs; runnable by hand too.
+#
+#   mlflow            experiment tracking UI at http://localhost:5000
+#   dataset-prep      Pi memory -> ~/starsi-train/data/{train,valid}.jsonl
+#   artifact-packager fused safetensors -> GGUF + tarball -> S3
+
+name: starsi-mac-aux
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns
+    ports: ["5000:5000"]
+    volumes:
+      - mlruns:/mlruns
+
+  dataset-prep:
+    build: ../../../blocks/mac-aux/dataset-prep
+    profiles: ["jobs"]            # run on demand: docker compose run dataset-prep
+    environment:
+      STARSI_MEMORY_URL: ${STARSI_MEMORY_URL:-http://raspberrypi.local:30084}
+      STARSI_AUTH_TOKEN: ${STARSI_AUTH_TOKEN:?set the device token}
+      DATA_DIR: /data
+    volumes:
+      - ${HOME}/starsi-train/data:/data
+
+  artifact-packager:
+    build: ../../../blocks/mac-aux/artifact-packager
+    profiles: ["jobs"]
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-starsi-artifacts}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-west-2}
+      RUNS_DIR: /runs
+    volumes:
+      - ${HOME}/starsi-train/runs:/runs
+
+volumes:
+  mlruns:

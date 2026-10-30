@@ -1,0 +1,4 @@
+# authorized_keys for the Mac (Remote Login). The Pi's pipeline key logs in as
+# the regular user to drive training — it needs exec, so no `restrict` here,
+# but scope it to the starsi-train entrypoints via command=.
+# command="/Users/samanyuparvathaneni/.starsi/bin/pipeline-shell",no-port-forwarding,no-agent-forwarding,no-X11-forwarding ssh-ed25519 <PI-PUBKEY> starsi-pi

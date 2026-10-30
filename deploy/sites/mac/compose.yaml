@@ -1,0 +1,51 @@
+# Mac dev/aux assembly. Lego blocks on the Mac run under Docker (colima /
+# Docker Desktop); MLX training itself is bare-metal (train/), never in here.
+#
+# Dev loop: `docker compose up` gives a full local chat stack — the gateway
+# fronting a llama.cpp stand-in upstream — so block changes are testable
+# without the Pi or AWS.
+#
+#   curl localhost:8484/health
+#   curl -N -H "Authorization: Bearer $STARSI_AUTH_TOKEN" \
+#        localhost:8484/v1/chat/completions \
+#        -d '{"messages":[{"role":"user","content":"hi"}]}'
+
+name: starsi-mac
+
+services:
+  gateway:
+    build: ../../../blocks/gateway
+    ports: ["8484:8484"]
+    environment:
+      STARSI_SITE: mac-dev
+      STARSI_AUTH_TOKEN: ${STARSI_AUTH_TOKEN:-starsi-dev-7f3a9c}
+      STARSI_TIER_CPU: http://inference-cpu:8080/v1|default
+      STARSI_DEFAULT_TIER: starsi-cpu
+      STARSI_MEMORY_URL: http://memory:8080
+    volumes:
+      - gateway-spool:/var/lib/starsi/spool
+    depends_on: [inference-cpu, memory]
+
+  memory:
+    build: ../../../blocks/memory
+    environment:
+      STARSI_MEMORY_PATH: /var/lib/starsi/memory
+    volumes:
+      - memory-store:/var/lib/starsi/memory
+
+  inference-cpu:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    command:
+      - -hf
+      - ${STARSI_DEV_GGUF:-ggml-org/Qwen2.5-0.5B-Instruct-GGUF}
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8080"
+    volumes:
+      - llama-cache:/root/.cache/llama.cpp
+
+volumes:
+  gateway-spool:
+  memory-store:
+  llama-cache:

@@ -1,0 +1,5 @@
+# authorized_keys for user `starsi` on the Raspberry Pi.
+# Phone at home: gateway/memory/registry NodePorts only.
+# restrict,port-forwarding,permitopen="127.0.0.1:30086",permitopen="127.0.0.1:30084",permitopen="127.0.0.1:30085" ssh-ed25519 <IPHONE-PUBKEY> starsi-iphone
+# Ops laptop: same forwards.
+# restrict,port-forwarding,permitopen="127.0.0.1:30086",permitopen="127.0.0.1:30084",permitopen="127.0.0.1:30085" ssh-ed25519 <OPS-PUBKEY> starsi-ops

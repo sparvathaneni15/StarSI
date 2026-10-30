@@ -1,0 +1,36 @@
+# Persistent Pi → AWS SSH fabric. Install on the Pi:
+#   sudo cp pi-to-aws.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now pi-to-aws
+# Requires: apt install autossh; the Pi's key enrolled in
+# infra/ssh/authorized_keys.d/aws; AWS_HOST set in /etc/default/starsi-tunnel.
+#
+# Forwards (all loopback-bound on both ends):
+#   -L 19090 -> AWS gateway NodePort 30086   (Pi-side access to AWS services)
+#   -L 19091 -> AWS capacity NodePort 30087  (pipeline can wake the GPU)
+#   -R 18484 <- Pi memory NodePort 30084     (AWS gateway syncs turns home)
+#   -R 18485 <- Pi registry NodePort 30085   (deploy jobs record versions)
+
+[Unit]
+Description=StarSI SSH fabric: Pi to AWS rendezvous
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/default/starsi-tunnel
+User=pi
+Environment=AUTOSSH_GATETIME=0
+ExecStart=/usr/bin/autossh -M 0 -N \
+  -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+  -o ExitOnForwardFailure=yes \
+  -o UserKnownHostsFile=/home/pi/.ssh/starsi_known_hosts \
+  -i /home/pi/.starsi/keys/starsi_pi \
+  -L 127.0.0.1:19090:127.0.0.1:30086 \
+  -L 127.0.0.1:19091:127.0.0.1:30087 \
+  -R 127.0.0.1:18484:127.0.0.1:30084 \
+  -R 127.0.0.1:18485:127.0.0.1:30085 \
+  starsi@${AWS_HOST}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

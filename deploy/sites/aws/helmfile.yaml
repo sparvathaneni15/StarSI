@@ -1,0 +1,50 @@
+# AWS site assembly — all inference + voice + the gateway the phone tunnels to.
+#
+#   export STARSI_AUTH_TOKEN=...
+#   export GPU_INSTANCE_ID=i-...        # from terraform output
+#   helmfile -f deploy/sites/aws/helmfile.yaml apply
+
+releases:
+  - name: starsi-gateway
+    chart: ../../../blocks/gateway/chart
+    values:
+      - site: aws
+        authToken: {{ requiredEnv "STARSI_AUTH_TOKEN" | quote }}
+        defaultTier: starsi-cpu
+        hostNetwork: true                       # reaches the Pi reverse tunnel on host lo
+        tiers:
+          CPU: "http://starsi-inference-cpu:8080/v1|starsi"
+          GPU: "http://starsi-inference-gpu:8000/v1|starsi"
+        memoryUrl: "http://127.0.0.1:18484"     # Pi memory via reverse tunnel
+        sttUrl: "http://starsi-stt:8000/v1"
+        ttsUrl: "http://starsi-tts:8000/v1"
+        capacityUrl: "http://starsi-capacity:8080"
+        service: {type: NodePort, port: 8484, nodePort: 30086}
+
+  - name: starsi-inference-cpu
+    chart: ../../../blocks/inference-cpu/chart
+
+  - name: starsi-inference-gpu
+    chart: ../../../blocks/inference-gpu/chart
+
+  - name: starsi-capacity
+    chart: ../../../blocks/capacity-controller/chart
+    values:
+      - authToken: {{ requiredEnv "STARSI_AUTH_TOKEN" | quote }}
+        gpuInstanceId: {{ requiredEnv "GPU_INSTANCE_ID" | quote }}
+
+  - name: starsi-stt
+    chart: ../../../blocks/stt/chart
+
+  - name: starsi-tts
+    chart: ../../../blocks/tts/chart
+
+  - name: nvidia-device-plugin
+    chart: nvdp/nvidia-device-plugin
+    version: 0.17.0
+    values:
+      - nodeSelector: {starsi/gpu: "true"}
+
+repositories:
+  - name: nvdp
+    url: https://nvidia.github.io/k8s-device-plugin

@@ -16,13 +16,21 @@ targets:
       - package: StarSIPackage
         product: StarSIClient
       - package: StarSIPackage
-        product: StarSIMCP
+        product: StarSIRouter
+      - package: StarSIPackage
+        product: StarSITunnel
+      - package: StarSIPackage
+        product: StarSIVoice
+      - package: StarSIPackage
+        product: StarSITools
     info:
       path: Sources/StarSIApp/Info.plist
       properties:
-        NSBonjourServices: [_starsi._tcp]
-        NSLocalNetworkUsageDescription: "StarSI finds your Mac on the local network to chat with your private model."
-        UIBackgroundModes: [fetch]
+        NSMicrophoneUsageDescription: "StarSI listens so you can talk to your assistant."
+        NSSpeechRecognitionUsageDescription: "StarSI renders what you say as text on-device."
+        UIBackgroundModes: [audio]
     settings:
       base:
         SWIFT_STRICT_CONCURRENCY: complete
+        DEVELOPMENT_TEAM: SL6XU3QCNY
+        CODE_SIGN_STYLE: Automatic

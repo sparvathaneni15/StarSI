@@ -1,96 +1,92 @@
-// Wire protocol — mirrors packages/starsi-core/starsi_core/protocol.py
-// and protocol/starsi.schema.json. Keep the three in sync by hand until
-// codegen is wired up.
+// OpenAI-compatible wire types — mirrors protocol/README.md and the
+// gateway block (blocks/gateway). Keep in sync by hand.
 
 import Foundation
 
-public enum Role: String, Codable, Sendable { case system, user, assistant, tool }
-
-public struct ChatMessage: Codable, Sendable {
-    public var role: Role
+public struct ChatMessage: Codable, Sendable, Equatable {
+    public var role: String
     public var content: String
-    public var toolCallId: String?
-    public init(role: Role, content: String, toolCallId: String? = nil) {
-        self.role = role; self.content = content; self.toolCallId = toolCallId
+    public init(role: String, content: String) {
+        self.role = role
+        self.content = content
     }
 }
 
-public struct SamplingConfig: Codable, Sendable {
-    public var temperature: Double = 1.0
-    public var minP: Double = 0.05
-    public var topP: Double? = nil
-    public var maxTokens: Int = 2048
-    public var reasoningEffort: String = "medium"
-    public init() {}
-}
-
-public struct IdeationConfig: Codable, Sendable {
-    public var enabled = false
-    public var candidates = 8
-    public var survivors = 2
-    public var noveltyWeight = 0.5
-    public var plausibilityWeight = 0.5
-    public init() {}
-}
-
-public struct ChatRequest: Codable, Sendable {
+public struct ChatCompletionRequest: Encodable, Sendable {
+    public var model: String?
     public var messages: [ChatMessage]
-    public var model: String?
-    public var sampling = SamplingConfig()
-    public var ideation = IdeationConfig()
-    public var tools: [String] = []
     public var stream = true
-    public init(messages: [ChatMessage]) { self.messages = messages }
-}
+    public var maxTokens: Int?
+    public var temperature: Double?
 
-public struct StreamEvent: Codable, Sendable {
-    public enum Kind: String, Codable, Sendable { case token, thinking, toolCall = "tool_call", candidate, done, error }
-    public var type: Kind
-    public var content: String = ""
-    public var toolName: String?
-    public var toolArgs: [String: AnyCodable]?
-    public var toolCallId: String?
-    public var candidateIndex: Int?
-    public var novelty: Double?
-    public var plausibility: Double?
-    public var servedBy: String?
-    public var model: String?
-}
-
-/// Minimal type-erased JSON value for tool arguments.
-public struct AnyCodable: Codable, Sendable {
-    public let value: any Sendable
-    public init(_ value: any Sendable) { self.value = value }
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.singleValueContainer()
-        if let v = try? c.decode(Bool.self) { value = v }
-        else if let v = try? c.decode(Int.self) { value = v }
-        else if let v = try? c.decode(Double.self) { value = v }
-        else if let v = try? c.decode(String.self) { value = v }
-        else if let v = try? c.decode([AnyCodable].self) { value = v.map(\.value) }
-        else if let v = try? c.decode([String: AnyCodable].self) { value = v.mapValues(\.value) }
-        else { value = Optional<String>.none as Any as! any Sendable }
+    public init(messages: [ChatMessage], model: String? = nil,
+                maxTokens: Int? = nil, temperature: Double? = nil) {
+        self.messages = messages
+        self.model = model
+        self.maxTokens = maxTokens
+        self.temperature = temperature
     }
-    public func encode(to encoder: Encoder) throws {
-        var c = encoder.singleValueContainer()
-        switch value {
-        case let v as Bool: try c.encode(v)
-        case let v as Int: try c.encode(v)
-        case let v as Double: try c.encode(v)
-        case let v as String: try c.encode(v)
-        default: try c.encodeNil()
+
+    enum CodingKeys: String, CodingKey {
+        case model, messages, stream, temperature
+        case maxTokens = "max_tokens"
+    }
+}
+
+/// GET /health on the gateway: per-tier reachability + GPU instance state.
+public struct GatewayHealth: Decodable, Sendable {
+    public struct Tier: Decodable, Sendable {
+        public var up: Bool
+    }
+
+    public var status: String
+    public var site: String
+    public var tiers: [String: Tier]
+    public var gpuState: String?
+
+    public init(status: String, site: String, tiers: [String: Tier], gpuState: String? = nil) {
+        self.status = status
+        self.site = site
+        self.tiers = tiers
+        self.gpuState = gpuState
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case status, site, tiers
+        case gpuState = "gpu_state"
+    }
+}
+
+public enum TransportEvent: Sendable, Equatable {
+    case token(String)
+    case done
+}
+
+/// Parses one SSE line from /v1/chat/completions into an event.
+/// Returns nil for lines that carry no delta (comments, role-only frames).
+public enum SSEParser {
+    private struct Chunk: Decodable {
+        struct Choice: Decodable {
+            struct Delta: Decodable { var content: String? }
+            var delta: Delta
+            var finishReason: String?
+            enum CodingKeys: String, CodingKey {
+                case delta
+                case finishReason = "finish_reason"
+            }
         }
+        var choices: [Choice]
     }
-}
 
-extension JSONDecoder {
-    /// Decoder matching the snake_case produced by the Python side.
-    public static let starsi: JSONDecoder = {
-        let d = JSONDecoder(); d.keyDecodingStrategy = .convertFromSnakeCase; return d
-    }()
-}
-extension JSONEncoder {
-    public static let starsi: JSONEncoder = {
-        let e = JSONEncoder(); e.keyEncodingStrategy = .convertToSnakeCase; return e
-    }()
+    public static func parse(line: String) -> TransportEvent? {
+        guard line.hasPrefix("data: ") else { return nil }
+        let payload = String(line.dropFirst(6))
+        if payload == "[DONE]" { return .done }
+        guard let chunk = try? JSONDecoder().decode(Chunk.self, from: Data(payload.utf8)),
+              let choice = chunk.choices.first
+        else { return nil }
+        if let text = choice.delta.content, !text.isEmpty { return .token(text) }
+        if choice.finishReason != nil { return .done }
+        return nil
+    }
 }

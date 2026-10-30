@@ -1,0 +1,26 @@
+# Pi site assembly — always-on home blocks.
+# The Pi hosts memory + registry (+ the model-pipeline Jobs chart, installed by
+# phase 5). The phone talks chat to the AWS gateway; home-direct chat via a Pi
+# gateway is a later optimization (add a release for ../../blocks/gateway/chart).
+#
+#   export STARSI_AUTH_TOKEN=...   # same token the phone enrolls with
+#   helmfile -f deploy/sites/pi/helmfile.yaml apply
+
+releases:
+  - name: starsi-memory
+    chart: ../../../blocks/memory/chart
+    values:
+      - authToken: {{ requiredEnv "STARSI_AUTH_TOKEN" | quote }}
+      - service: {type: NodePort, port: 8080, nodePort: 30084}
+      - storage: {size: 20Gi}
+
+  - name: starsi-registry
+    chart: ../../../blocks/registry/chart
+    values:
+      - authToken: {{ requiredEnv "STARSI_AUTH_TOKEN" | quote }}
+      - service: {type: NodePort, port: 8080, nodePort: 30085}
+
+  - name: starsi-pipeline
+    chart: ../../../blocks/model-pipeline/chart
+    values:
+      - authToken: {{ requiredEnv "STARSI_AUTH_TOKEN" | quote }}

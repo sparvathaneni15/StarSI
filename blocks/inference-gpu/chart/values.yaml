@@ -1,0 +1,27 @@
+image:
+  repository: vllm/vllm-openai
+  tag: latest
+  pullPolicy: IfNotPresent
+
+model:
+  # Bootstrap: serve a stock HF model. Pipeline mode: s3 tarball of your fused
+  # safetensors; bump version from the deploy job.
+  hf: "Qwen/Qwen2.5-7B-Instruct"
+  s3:
+    enabled: false
+    bucket: starsi-artifacts
+    name: starsi
+    version: v0
+  servedName: starsi
+
+maxModelLen: 16384
+gpuMemoryUtilization: "0.92"
+
+service:
+  port: 8000        # ClusterIP — only the gateway talks to this
+
+cache:
+  size: 80Gi
+
+nodeSelector:
+  starsi/gpu: "true"

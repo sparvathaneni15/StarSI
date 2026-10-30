@@ -1,0 +1,36 @@
+image:
+  repository: ghcr.io/samanyuparvathaneni/starsi-gateway
+  tag: latest
+  pullPolicy: IfNotPresent
+
+site: dev
+authToken: ""            # set per site via helmfile values / --set
+defaultTier: starsi-cpu
+
+# tier name suffix -> "baseUrl|upstreamModel". Rendered to STARSI_TIER_* envs.
+tiers: {}
+#  CPU: "http://starsi-inference-cpu:8080/v1|default"
+#  GPU: "http://starsi-inference-gpu:8000/v1|starsi"
+
+memoryUrl: ""            # http://starsi-memory:8080 on the Pi; tunnel localhost on AWS
+sttUrl: ""
+ttsUrl: ""
+capacityUrl: ""          # http://starsi-capacity:8080 — GPU-tier requests touch it
+agentEnabled: false
+
+service:
+  type: NodePort
+  port: 8484
+  nodePort: 30086
+
+# SSH tunnel endpoints (autossh -L/-R) bind on the HOST's loopback; the gateway
+# must share the host network namespace to reach them (memory over the reverse
+# tunnel) and to be reachable through them.
+hostNetwork: true
+
+spool:
+  size: 1Gi
+
+resources:
+  requests: {cpu: 50m, memory: 128Mi}
+  limits: {memory: 512Mi}

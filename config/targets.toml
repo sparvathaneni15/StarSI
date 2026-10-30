@@ -1,0 +1,27 @@
+# Tier registry — mirrored into the iPhone app's Settings defaults.
+# Targets are inference tiers behind the AWS gateway, not machines.
+# All of them are reached through the SSH tunnel's local forward.
+
+[[target]]
+id = "aws-cpu"
+display_name = "Cloud (fast)"
+model = "starsi-cpu"        # llama.cpp tier, always on
+enabled = true
+
+[[target]]
+id = "aws-gpu"
+display_name = "Cloud (deep)"
+model = "starsi-gpu"        # vLLM tier, scale-to-zero (capacity-controller)
+enabled = true
+
+[[target]]
+id = "iphone"
+display_name = "iPhone"
+enabled = false             # on-device fallback (model lands in Phase 4)
+
+[ssh]
+# The rendezvous the phone connects to. Pin the host key:
+#   ssh-keyscan -t ed25519 <aws-ip>
+host = ""                   # set after `terraform apply` (cpu_public_ip output)
+port = 22
+user = "starsi"

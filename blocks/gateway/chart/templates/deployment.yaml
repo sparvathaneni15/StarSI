@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels: {app: {{ .Release.Name }}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app: {{ .Release.Name }}}
+    spec:
+      {{- if .Values.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      containers:
+        - name: gateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8484
+          env:
+            - name: STARSI_SITE
+              value: {{ .Values.site | quote }}
+            - name: STARSI_DEFAULT_TIER
+              value: {{ .Values.defaultTier | quote }}
+            - name: STARSI_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef: {name: {{ .Release.Name }}-auth, key: token}
+            {{- range $name, $spec := .Values.tiers }}
+            - name: STARSI_TIER_{{ $name | upper }}
+              value: {{ $spec | quote }}
+            {{- end }}
+            {{- if .Values.memoryUrl }}
+            - name: STARSI_MEMORY_URL
+              value: {{ .Values.memoryUrl | quote }}
+            {{- end }}
+            {{- if .Values.sttUrl }}
+            - name: STARSI_STT_URL
+              value: {{ .Values.sttUrl | quote }}
+            {{- end }}
+            {{- if .Values.ttsUrl }}
+            - name: STARSI_TTS_URL
+              value: {{ .Values.ttsUrl | quote }}
+            {{- end }}
+            {{- if .Values.capacityUrl }}
+            - name: STARSI_CAPACITY_URL
+              value: {{ .Values.capacityUrl | quote }}
+            {{- end }}
+            - name: STARSI_AGENT_ENABLED
+              value: {{ .Values.agentEnabled | quote }}
+          volumeMounts:
+            - name: spool
+              mountPath: /var/lib/starsi/spool
+          readinessProbe:
+            httpGet: {path: /health, port: 8484}
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: spool
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-spool

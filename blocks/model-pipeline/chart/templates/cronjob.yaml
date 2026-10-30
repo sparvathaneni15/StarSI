@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  suspend: {{ .Values.suspend }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 86400   # training runs for hours; a day is the cap
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pipeline
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args: ["--stages", "fetch,dataset,train,fuse,package,deploy"]
+              env:
+                - {name: MAC_SSH, value: {{ .Values.macSsh | quote }}}
+                - {name: AWS_SSH, value: {{ .Values.awsSsh | quote }}}
+                - {name: REPO_DIR, value: {{ .Values.repoDir | quote }}}
+                - {name: HF_REPO, value: {{ .Values.hfRepo | quote }}}
+                - {name: MODEL_NAME, value: {{ .Values.modelName | quote }}}
+                - {name: S3_BUCKET, value: {{ .Values.s3Bucket | quote }}}
+                - {name: STARSI_REGISTRY_URL, value: {{ .Values.registryUrl | quote }}}
+                - name: STARSI_AUTH_TOKEN
+                  valueFrom:
+                    secretKeyRef: {name: {{ .Release.Name }}-auth, key: token}
+                - {name: HOME, value: /home/pipeline}
+              volumeMounts:
+                - name: ssh
+                  mountPath: /home/pipeline/.ssh
+                  readOnly: true
+          volumes:
+            - name: ssh
+              secret:
+                secretName: {{ .Values.sshSecret }}
+                defaultMode: 0400
+                items:
+                  - {key: id_ed25519, path: id_ed25519}
+                  - {key: known_hosts, path: known_hosts}

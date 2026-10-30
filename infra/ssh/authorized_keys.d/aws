@@ -1,0 +1,7 @@
+# authorized_keys for user `starsi` on the AWS CPU instance (the rendezvous).
+# Pi autossh: forward to AWS NodePorts + reverse-expose Pi services on 18484/18485.
+# restrict,port-forwarding,permitopen="127.0.0.1:30086",permitopen="127.0.0.1:30087",permitlisten="127.0.0.1:18484",permitlisten="127.0.0.1:18485" ssh-ed25519 <PI-PUBKEY> starsi-pi
+# Phone anywhere: AWS gateway + Pi services via the reverse tunnel.
+# restrict,port-forwarding,permitopen="127.0.0.1:30086",permitopen="127.0.0.1:18484",permitopen="127.0.0.1:18485" ssh-ed25519 <IPHONE-PUBKEY> starsi-iphone
+# Mac artifact pushes use the admin key (ec2-user), not the tunnel user.
+# restrict,port-forwarding,permitopen="127.0.0.1:30086",permitopen="127.0.0.1:30087" ssh-ed25519 <OPS-PUBKEY> starsi-ops

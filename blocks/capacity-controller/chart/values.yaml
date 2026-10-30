@@ -1,0 +1,18 @@
+image:
+  repository: ghcr.io/samanyuparvathaneni/starsi-capacity-controller
+  tag: latest
+  pullPolicy: IfNotPresent
+
+authToken: ""
+gpuInstanceId: ""     # terraform output gpu_instance_id
+region: us-west-2
+idleMinutes: 15
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30087
+
+resources:
+  requests: {cpu: 25m, memory: 64Mi}
+  limits: {memory: 256Mi}

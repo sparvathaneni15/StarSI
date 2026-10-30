@@ -1,0 +1,30 @@
+image:
+  repository: ghcr.io/ggml-org/llama.cpp
+  tag: server
+  pullPolicy: IfNotPresent
+
+model:
+  # Bootstrap mode: pull a stock GGUF straight from HuggingFace.
+  hf: "ggml-org/Qwen2.5-3B-Instruct-Q4_K_M-GGUF"
+  # Pipeline mode: once your own weights exist, set s3.enabled and bump
+  # version from the deploy job (kubectl set env ... MODEL_VERSION=...).
+  s3:
+    enabled: false
+    bucket: starsi-artifacts
+    name: starsi
+    version: v0
+  servedName: starsi          # what /v1/models reports; gateway's upstream_model
+
+contextSize: 8192
+parallel: 2
+threads: 0                    # 0 = llama.cpp picks
+
+service:
+  port: 8080                  # ClusterIP — only the gateway talks to this
+
+cache:
+  size: 30Gi
+
+resources:
+  requests: {cpu: "2", memory: 6Gi}
+  limits: {memory: 12Gi}
